@@ -22,6 +22,8 @@ dependencies:
   screen_brightness_ios: ">=2.1.4 <3.0.0"
   screen_brightness_macos: ">=2.1.4 <3.0.0"
   screen_brightness_windows: ">=2.1.2 <3.0.0"
+  screen_brightness_linux:
+    path: ../screen_brightness_linux
   screen_brightness_ohos: ">=2.1.4 <3.0.0"
 
 dev_dependencies:
@@ -62,6 +64,8 @@ flutter:
         default_package: screen_brightness_macos
       windows:
         default_package: screen_brightness_windows
+      linux:
+        default_package: screen_brightness_linux
       ohos:
         default_package: screen_brightness_ohos
 

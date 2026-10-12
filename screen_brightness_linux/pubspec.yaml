@@ -1,0 +1,33 @@
+name: screen_brightness_linux
+description: The Linux federated plugin implementation of the screen_brightness, using systemd-logind and sysfs backlight.
+version: 2.1.2
+homepage: https://github.com/aaassseee/screen_brightness
+repository: https://github.com/aaassseee/screen_brightness/tree/master/screen_brightness_linux
+issue_tracker: https://github.com/aaassseee/screen_brightness/issues
+
+topics:
+  - screen
+  - monitor
+  - brightness
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  dbus: ^0.7.10
+  screen_brightness_platform_interface: ">=2.1.2 <3.0.0"
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ">=6.0.0 <7.0.0"
+
+flutter:
+  plugin:
+    implements: screen_brightness
+    platforms:
+      linux:
+        dartPluginClass: ScreenBrightnessLinux
