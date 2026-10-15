@@ -19,7 +19,10 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import java.lang.reflect.Field
+import kotlin.math.exp
+import kotlin.math.ln
 import kotlin.math.sign
+import kotlin.math.sqrt
 import kotlin.properties.Delegates
 import androidx.core.net.toUri
 
@@ -198,7 +201,7 @@ class ScreenBrightnessAndroidPlugin : FlutterPlugin, MethodCallHandler, Activity
         // check brightness changed
         if (brightness.sign != -1.0f) {
             // return changed brightness
-            result.success(brightness)
+            result.success(linearToSlider(brightness))
             return
         }
 
@@ -228,7 +231,7 @@ class ScreenBrightnessAndroidPlugin : FlutterPlugin, MethodCallHandler, Activity
             return
         }
 
-        val isSet = setWindowsAttributesBrightness(brightness)
+        val isSet = setWindowsAttributesBrightness(sliderToLinear(brightness))
         if (!isSet) {
             result.error("-1", "Unable to change application screen brightness", null)
             return
@@ -327,9 +330,30 @@ class ScreenBrightnessAndroidPlugin : FlutterPlugin, MethodCallHandler, Activity
     }
 
     private fun getSystemScreenBrightness(context: Context): Float {
-        return Settings.System.getInt(
-            context.contentResolver, Settings.System.SCREEN_BRIGHTNESS
-        ) / maximumScreenBrightness
+        val linear = try {
+            Settings.System.getFloat(context.contentResolver, "screen_brightness_float")
+        } catch (_: Settings.SettingNotFoundException) {
+            Settings.System.getInt(
+                context.contentResolver, Settings.System.SCREEN_BRIGHTNESS
+            ) / maximumScreenBrightness
+        }
+        return linearToSlider(linear)
+    }
+
+    private fun sliderToLinear(value: Float): Float {
+        val v = value.coerceIn(0f, 1f)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return v
+        val gamma = if (v <= GAMMA_R) (v / GAMMA_R) * (v / GAMMA_R)
+        else exp((v - GAMMA_C) / GAMMA_A) + GAMMA_B
+        return (gamma / 12f).coerceIn(0f, 1f)
+    }
+
+    private fun linearToSlider(value: Float): Float {
+        val v = value.coerceIn(0f, 1f)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return v
+        val n = v * 12f
+        val gamma = if (n <= 1f) sqrt(n) * GAMMA_R else GAMMA_A * ln(n - GAMMA_B) + GAMMA_C
+        return gamma.coerceIn(0f, 1f)
     }
 
     private fun setSystemScreenBrightness(context: Context, brightness: Float): Boolean {
@@ -346,7 +370,7 @@ class ScreenBrightnessAndroidPlugin : FlutterPlugin, MethodCallHandler, Activity
         }
 
         return Settings.System.putInt(
-            context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, (maximumScreenBrightness * brightness).toInt()
+            context.contentResolver, Settings.System.SCREEN_BRIGHTNESS, (maximumScreenBrightness * sliderToLinear(brightness)).toInt()
         )
     }
 
@@ -385,5 +409,12 @@ class ScreenBrightnessAndroidPlugin : FlutterPlugin, MethodCallHandler, Activity
         } else {
             true
         }
+    }
+
+    private companion object {
+        const val GAMMA_R = 0.5f
+        const val GAMMA_A = 0.17883277f
+        const val GAMMA_B = 0.28466892f
+        const val GAMMA_C = 0.55991073f
     }
 }
